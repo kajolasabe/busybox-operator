@@ -42,6 +42,38 @@ func (r *ReconcileBusybox) ensureDeployment(request reconcile.Request,
 		log.Error(err, "Failed to get Deployment")
 		return &reconcile.Result{}, err
 	}
+	
+	// Check for any updates for redeployment
+	applyChange := false
+
+	// Ensure the deployment size is same as the spec
+	size := instance.Spec.Size
+	if *dep.Spec.Replicas != size {
+		dep.Spec.Replicas = &size
+		applyChange = true
+	}
+
+	// Ensure image name is correct, update image if required
+	image := instance.Spec.Image
+	var currentImage string = ""
+
+	if found.Spec.Template.Spec.Containers != nil {
+		currentImage = found.Spec.Template.Spec.Containers[0].Image
+	}
+
+	if image != currentImage {
+		dep.Spec.Template.Spec.Containers[0].Image = image
+		applyChange = true
+	}
+
+	if applyChange {
+		err = r.client.Update(context.TODO(), dep)
+		if err != nil {
+			log.Error(err, "Failed to update Deployment.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+			return &reconcile.Result{}, err
+		}
+		log.Info("Updated Deployment image. ")
+	}
 
 	return nil, nil
 }
