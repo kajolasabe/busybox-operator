@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: mysql-pv-volume
-  namespace: mysql
+  name: busybox-pv-volume
+  namespace: busybox
   labels:
     type: local
-    app: mysql
+    app: busybox
 spec:
   storageClassName: local-storage
   capacity:
@@ -19,7 +19,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: mysql-pv-claim
+  name: busybox-pv-claim
 spec:
   storageClassName: local-storage
   accessModes:
@@ -27,4 +27,4 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  volumeName: "mysql-pv-volume"
+  volumeName: "busybox-pv-volume"
