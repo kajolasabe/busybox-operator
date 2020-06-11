@@ -44,16 +44,6 @@ func (r *ReconcileBusybox) busyboxDeployment(v *busyboxv1alpha1.Busybox) *appsv1
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Volumes: []corev1.Volume{
-						{
-							Name: pvStorageName,
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: pvClaimName,
-								},
-							},
-						},
-					},
 					Containers: []corev1.Container{{
 						Image:	busyboxImage,
 						ImagePullPolicy: corev1.PullAlways,
@@ -62,12 +52,6 @@ func (r *ReconcileBusybox) busyboxDeployment(v *busyboxv1alpha1.Busybox) *appsv1
 							ContainerPort: 	busyboxPort,
 							Name:			"busybox",
 						}},
-						VolumeMounts: []corev1.VolumeMount{
-							{
-								Name:      pvStorageName,
-								MountPath: "mnt/data",
-							},
-						},
 					}},
 				},
 			},
