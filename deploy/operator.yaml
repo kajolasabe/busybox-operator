@@ -16,7 +16,7 @@ spec:
       containers:
         - name: busybox-operator
           # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: quay.io/kajolasabe/busysox-go-operator:v0.0.1
           command:
           - busybox-operator
           imagePullPolicy: Always
