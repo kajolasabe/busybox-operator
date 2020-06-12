@@ -212,10 +212,8 @@ func (r *ReconcileBusybox) deploymentForBusybox(m *busyboxv1alpha1.Busybox) *app
 					Containers: []corev1.Container{{
                                         	Name: "busybox",
 						Image: "busybox",
-                                        	Ports: []corev1.ContainerPort{{
-                                                        ContainerPort: 80,
-                                                        Name: "busybox",
-                                                }},
+						ImagePullPolicy: corev1.PullAlways,
+			                        Command: []string{"sleep", "3600"},
 					}},	
 				},
 			},
