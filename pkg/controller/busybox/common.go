@@ -53,19 +53,6 @@ func (r *ReconcileBusybox) ensureDeployment(request reconcile.Request,
 		applyChange = true
 	}
 
-	// Ensure image name is correct, update image if required
-	image := instance.Spec.Image
-	var currentImage string = ""
-
-	if found.Spec.Template.Spec.Containers != nil {
-		currentImage = found.Spec.Template.Spec.Containers[0].Image
-	}
-
-	if image != currentImage {
-		dep.Spec.Template.Spec.Containers[0].Image = image
-		applyChange = true
-	}
-
 	if applyChange {
 		err = r.client.Update(context.TODO(), dep)
 		if err != nil {
