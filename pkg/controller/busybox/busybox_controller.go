@@ -109,8 +109,57 @@ func (r *ReconcileBusybox) Reconcile(request reconcile.Request) (reconcile.Resul
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+	
+	// instance created successfully
+	currentStatus:="Busybox instance created"
+	if !reflect.DeepEqual(currentStatus, instance.Status.Status) {
+	instance.Status.Status=currentStatus
+	if err := r.client.Status().Update(context.TODO(), instance); err != nil {
+		return reconcile.Result{},err
+	}}
 
-	var result *reconcile.Result
+	// Check if the Deployment already exists, if not create a new one
+	deployment := &appsv1.Deployment{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, deployment)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new Deployment
+		dep := r.deploymentForPostgres(instance)
+		reqLogger.Info("Creating a new Deployment.", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+		err = r.client.Create(context.TODO(), dep)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new Deployment.", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+			return reconcile.Result{}, err
+		}
+		// Deployment created successfully - return and requeue
+		// NOTE: that the requeue is made with the purpose to provide the deployment object for the next step to ensure the deployment size is the same as the spec.
+		// Also, you could GET the deployment object again instead of requeue if you wish. See more over it here: https://godoc.org/sigs.k8s.io/controller-runtime/pkg/reconcile#Reconciler
+		return reconcile.Result{Requeue: true}, nil
+	} else if err != nil {
+		reqLogger.Error(err, "Failed to get Deployment.")
+		return reconcile.Result{}, err
+	}
+
+	// deployment created successfully - don't requeue
+	currentStatus="Deployment created"
+	if !reflect.DeepEqual(currentStatus, instance.Status.Status) {
+		instance.Status.Status=currentStatus
+		if err := r.client.Status().Update(context.TODO(), instance); err != nil {
+			return reconcile.Result{},err
+		}
+	}
+	// Ensure the deployment size is the same as the spec
+	size := instance.Spec.Size
+	if *deployment.Spec.Replicas != size {
+		deployment.Spec.Replicas = &size
+		err = r.client.Update(context.TODO(), deployment)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update Deployment.", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
+			return reconcile.Result{}, err
+		}
+	}
+	return reconcile.Result{}, nil
+	
+/*	var result *reconcile.Result
 
 	result, err = r.ensureDeployment(request, instance, r.busyboxDeployment(instance))
 	if result != nil {
@@ -133,5 +182,44 @@ func (r *ReconcileBusybox) Reconcile(request reconcile.Request) (reconcile.Resul
 		return *result, err
 	}
 
-	return reconcile.Result{}, nil
+	return reconcile.Result{}, nil*/
+}
+
+func (r *ReconcileBusybox) deploymentForBusybox(m *busyboxv1alpha1.Busybox) *appsv1.Deployment {
+	//ls := labelsForMemcached(m.Name)
+	ls := map[string]string{
+		"app": m.Name,
+	}
+	replicas := m.Spec.Size
+	dep := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      m.Name,
+			Namespace: m.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: ls,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: ls,
+				},
+				Spec: corev1.PodSpec{
+					ServiceAccountName: "busybox-operator",
+					Containers: []corev1.Container{{
+                                        	Name: "busybox",
+						Image: "busybox:1.31.1",
+                                        	Ports: []corev1.ContainerPort{{
+                                                        ContainerPort: 80,
+                                                        Name: "busybox",
+                                                }},
+					}},	
+				},
+			},
+		},
+	}
+	// Set instance as the owner of the Deployment.
+	controllerutil.SetControllerReference(m, dep, r.scheme)
+	return dep
 }
