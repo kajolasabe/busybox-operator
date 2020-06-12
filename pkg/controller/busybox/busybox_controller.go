@@ -211,7 +211,7 @@ func (r *ReconcileBusybox) deploymentForBusybox(m *busyboxv1alpha1.Busybox) *app
 					ServiceAccountName: "busybox-operator",
 					Containers: []corev1.Container{{
                                         	Name: "busybox",
-						Image: "busybox:1.31.1",
+						Image: "busybox",
                                         	Ports: []corev1.ContainerPort{{
                                                         ContainerPort: 80,
                                                         Name: "busybox",
