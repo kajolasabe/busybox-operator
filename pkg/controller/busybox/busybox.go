@@ -16,7 +16,6 @@ import (
 
 const busyboxPort = 81
 //const busyboxNodePort = 80
-const busyboxImage = "busybox:1.31.1"
 
 func busyboxDeploymentName(v *busyboxv1alpha1.Busybox) string {
 	return v.Name + "-deployment"
@@ -45,7 +44,7 @@ func (r *ReconcileBusybox) busyboxDeployment(v *busyboxv1alpha1.Busybox) *appsv1
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image:	busyboxImage,
+						Image:	"busybox",
 						ImagePullPolicy: corev1.PullAlways,
 						Name:	"busybox-service",
 						Ports:	[]corev1.ContainerPort{{
