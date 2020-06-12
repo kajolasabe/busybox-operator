@@ -1,11 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: DeploymentConfig
 metadata:
   name: busybox-operator
 spec:
   replicas: 1
   selector:
-    matchLabels:
       name: busybox-operator
   template:
     metadata:
